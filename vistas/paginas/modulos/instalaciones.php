@@ -197,7 +197,7 @@
             <!-- Main Image -->
             <div class="relative">
               <img
-                src="src/img/instalaciones.png"
+                src="vistas/src/img/instalaciones.png"
                 alt="Sala de espera del consultorio médico"
                 class="w-full rounded-xl object-cover shadow-lg"
               />
@@ -212,7 +212,7 @@
             <div class="grid grid-cols-2 gap-3">
               <div class="relative">
                 <img
-                  src="src/img/consultorio.png"
+                  src="vistas/src/img/consultorio.png"
                   width="190"
                   height="160"
                   alt="Sala de consulta médica"
@@ -226,7 +226,7 @@
               </div>
               <div class="relative">
                 <img
-                  src="src/img/equipos.png"
+                  src="vistas/src/img/equipos.png"
                   width="190"
                   height="160"
                   alt="Sala de equipos médicos"

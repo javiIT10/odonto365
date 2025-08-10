@@ -3,7 +3,7 @@
       class="bg-transparent p-4 md:p-6 lg:p-8 flex justify-between items-center gap-10 md:gap-12 lg:gap-16 max-w-7xl mx-auto"
     >
       <a
-        href="/"
+        href="<?php echo $ruta; ?>"
         class="w-fit flex justify-center items-center focus:outline-none gap-2 btn suave border border-borde"
       >
         <svg

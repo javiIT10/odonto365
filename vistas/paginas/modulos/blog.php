@@ -18,7 +18,7 @@
           <article class="group cursor-pointer">
             <div class="relative overflow-hidden rounded-lg mb-4">
               <img
-                src="src/img/blog1.jpeg"
+                src="vistas/src/img/blog1.jpeg"
                 alt="blog1"
                 class="w-full h-[300px] object-cover transition-transform duration-300 group-hover:scale-105"
               />
@@ -51,7 +51,7 @@
           <article class="group cursor-pointer">
             <div class="relative overflow-hidden rounded-lg mb-4">
               <img
-                src="src/img/blog1.jpeg"
+                src="vistas/src/img/blog1.jpeg"
                 alt="blog1"
                 class="w-full h-[300px] object-cover transition-transform duration-300 group-hover:scale-105"
               />
@@ -84,7 +84,7 @@
           <article class="group cursor-pointer">
             <div class="relative overflow-hidden rounded-lg mb-4">
               <img
-                src="src/img/blog1.jpeg"
+                src="vistas/src/img/blog1.jpeg"
                 alt="blog1"
                 class="w-full h-[300px] object-cover transition-transform duration-300 group-hover:scale-105"
               />

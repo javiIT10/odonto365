@@ -1,52 +1,3 @@
-// Specialists data
-const specialists = [
-  {
-    id: 1,
-    name: "Dr. María González",
-    specialty: "Ortodoncia",
-    image: "/placeholder.svg?height=400&width=400",
-    description:
-      "Especialista en ortodoncia con más de 15 años de experiencia en el diagnóstico y tratamiento de maloclusiones dentales. Graduada de la Universidad Nacional con especialización en ortodoncia invisible y brackets estéticos. Experta en tratamientos con Invisalign y sistemas de ortodoncia moderna.",
-    certifications: [
-      "Especialización en Ortodoncia - Universidad Nacional",
-      "Certificación Invisalign Diamond Provider",
-      "Diplomado en Ortodoncia Lingual",
-      "Certificación en Ortodoncia Interceptiva",
-      "Miembro de la Sociedad de Ortodoncia",
-    ],
-  },
-  {
-    id: 2,
-    name: "Dr. Carlos Rodríguez",
-    specialty: "Ortodoncia",
-    image: "/placeholder.svg?height=400&width=400",
-    description:
-      "Ortodoncista certificado con 12 años de experiencia en corrección dental. Especializado en ortodoncia interceptiva y correctiva para niños y adultos. Graduado de la Universidad Central con múltiples certificaciones internacionales en técnicas de ortodoncia avanzada.",
-    certifications: [
-      "Especialización en Ortodoncia - Universidad Central",
-      "Certificación en Brackets Autoligables",
-      "Diplomado en Ortodoncia Pediátrica",
-      "Certificación Damon System",
-      "Miembro del Colegio de Ortodoncistas",
-    ],
-  },
-  {
-    id: 3,
-    name: "Dra. Ana Martínez",
-    specialty: "Ortodoncia",
-    image: "/placeholder.svg?height=400&width=400",
-    description:
-      "Ortodoncista con enfoque en tratamientos estéticos y funcionales. 10 años de experiencia en ortodoncia lingual y sistemas de brackets transparentes. Especialista en casos complejos de maloclusión y rehabilitación oral integral.",
-    certifications: [
-      "Especialización en Ortodoncia - Universidad Javeriana",
-      "Certificación en Ortodoncia Lingual",
-      "Diplomado en Brackets Estéticos",
-      "Certificación Clear Aligner",
-      "Especialista en Casos Complejos",
-    ],
-  },
-];
-
 let currentSpecialist = 0;
 let selectedDate = null;
 let selectedTime = null;
@@ -303,12 +254,20 @@ function checkAppointmentComplete() {
   } else {
     getElement("appointment-summary", "-mobile").style.display = "none";
     getElement("appointment-summary", "-desktop").style.display = "none";
+
+    disableSubmitButtons();
   }
 }
 
 // Update summary
 function updateSummary() {
   const specialist = specialists[currentSpecialist];
+
+  const especialidadInput = document.getElementById("input-especialidad");
+  const idEspecialistaInput = document.getElementById("input-id-especialista");
+  const especialistaInput = document.getElementById("input-especialista");
+  const fechaInput = document.getElementById("input-fecha");
+  const horaInput = document.getElementById("input-hora");
 
   // Update specialty category in header
   getElement("specialty-category", "").textContent = specialist.specialty;
@@ -322,6 +281,8 @@ function updateSummary() {
     specialist.specialty;
   getElement("summary-doctor", "-desktop").textContent = specialist.name;
 
+  // Update inputs for form submission
+
   if (selectedDate && selectedTime) {
     const dateOptions = {
       weekday: "long",
@@ -334,7 +295,25 @@ function updateSummary() {
     getElement("summary-time", "-mobile").textContent = selectedTime;
     getElement("summary-date", "-desktop").textContent = formattedDate;
     getElement("summary-time", "-desktop").textContent = selectedTime;
+
+    fechaInput.value = selectedDate.toISOString().split("T")[0]; // YYYY-MM-DD format
+    horaInput.value = selectedTime;
+    especialidadInput.value = specialist.specialty;
+    idEspecialistaInput.value = specialist.id;
+    especialistaInput.value = specialist.name;
+
+    enableSubmitButtons();
   }
+}
+
+function enableSubmitButtons() {
+  document.getElementById("submit-appointment-mobile").disabled = false;
+  document.getElementById("submit-appointment-desktop").disabled = false;
+}
+
+function disableSubmitButtons() {
+  document.getElementById("submit-appointment-mobile").disabled = true;
+  document.getElementById("submit-appointment-desktop").disabled = true;
 }
 
 // Select specialist

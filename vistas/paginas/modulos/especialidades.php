@@ -46,9 +46,9 @@
               <div class="mb-2">
                 <?php echo $valor["icono_svg"]; ?>
               </div>
-              <h4 class="mb-2"><?php echo $valor["nombre"]; ?></h4>
+              <h4 class="mb-2"><?php echo $valor["especialidad_nombre"]; ?></h4>
               <p>
-                <?php echo $valor["descripcion"]; ?>
+                <?php echo $valor["especialidad_descripcion"]; ?>
               </p>
             </div>
           </a>

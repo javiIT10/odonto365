@@ -6,8 +6,19 @@ class AgendaApp {
     this.currentDateRangeStart = new Date(); // 22 de julio de 2025
     this.today = new Date(); // Fecha actual para marcar "Hoy"
 
+    /* Obtener fecha y hora de los inputs */
+    const fechaInput = document.getElementById("fecha");
+    const horaInput = document.getElementById("hora");
+
+    // Sepearar fecha
+    const [anio, mes, dia] = fechaInput.value.split("-").map(Number);
+
+    // Separar hora
+    const [hora, minuto] = horaInput.value.split(":").map(Number);
+
+    // Crear el objeto de cita
     this.selectedAppointment = {
-      date: new Date(2025, 7, 4, 13, 0), // 25 de julio de 2025, 16:00
+      date: new Date(anio, mes - 1, dia, hora, minuto),
       specialty: "Cardiología",
       specialist: "Dr. María González",
       duration: "45 minutos",
@@ -15,8 +26,8 @@ class AgendaApp {
     };
 
     this.unavailableSlots = [
-      new Date(2025, 7, 5, 8, 0), // Jueves 24, 11:00
-      new Date(2025, 7, 5, 10, 0), // Jueves 24, 14:00
+      new Date(2025, 7, 11, 8, 0), // Jueves 24, 11:00
+      new Date(2025, 7, 11, 10, 0), // Jueves 24, 14:00
       new Date(2025, 7, 5, 13, 0), // Jueves 24, 17:00
       new Date(2025, 7, 6, 9, 0), // Viernes 25, 12:00
       new Date(2025, 7, 3, 14, 0), // Viernes 25, 13:00
@@ -178,7 +189,7 @@ class AgendaApp {
         // Verificar si es el slot seleccionado
         if (this.isSameDateTime(slotDateTime, this.selectedAppointment.date)) {
           className =
-            "time-slot-button text-boton-primario-texto bg-boton-primario-bg hover:bg-boton-primario-hover-bg pointer-events-none cursor-not-allowed";
+            "time-slot-button text-boton-primario-texto bg-boton-primario-bg pointer-events-none cursor-not-allowed";
         }
 
         slotElement.className = className;

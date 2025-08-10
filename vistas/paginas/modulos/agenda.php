@@ -1,3 +1,9 @@
+    <?php
+    $fechaCita = $_POST['fecha'];
+    $horaCita = $_POST['hora'];
+    echo '<input type="hidden" id="fecha" name="fecha" value="'.$fechaCita.'">';
+    echo '<input type="hidden" id="hora" name="hora" value="'.$horaCita.'">';
+    ?>
     <!-- Contenido Principal -->
     <main class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
       <div class="lg:grid lg:grid-cols-3 lg:gap-8">
@@ -105,9 +111,10 @@
             <div class="mb-4">
               <h4 class="mb-2">Especialidad</h4>
               <p
+                id="summarySpecialty"
                 class="encabezado bg-estatus-neutral-bg text-estatus-neutral-texto rounded-lg"
               >
-                Ortodoncia
+                <?php echo $_POST['especialidad']; ?>
               </p>
             </div>
 
@@ -135,7 +142,7 @@
                   <path d="M8 15a6 6 0 0 0 12 0v-3" />
                   <circle cx="20" cy="10" r="2" />
                 </svg>
-                <p>Dr. María González</p>
+                <p id="summaryDoctor"><?php echo $_POST['especialista']; ?></p>
               </div>
             </div>
 
