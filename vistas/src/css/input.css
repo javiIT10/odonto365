@@ -49,7 +49,7 @@
 
   /* Fondos */
   --color-fondo-principal: hsl(210, 100%, 98%);
-  --color-fondo-alternativo: hsl(210, 20%, 95%);
+  --color-fondo-alternativo: #f8fafc /* hsl(210, 20%, 95%) */;
   --color-fondo-terciario: hsl(210, 100%, 90%);
 
   /* Tarjetas de estatus */
@@ -207,5 +207,36 @@
   }
   .time-slot-button.disabled {
     @apply text-boton-deshabilitado-texto bg-boton-deshabilitado-bg cursor-not-allowed;
+  }
+
+  /* Animaciones suaves para el modal */
+  .modal-enter {
+    animation: modalEnter 0.2s ease-out;
+  }
+
+  .modal-exit {
+    animation: modalExit 0.2s ease-in;
+  }
+
+  @keyframes modalEnter {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  @keyframes modalExit {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.95);
+    }
   }
 }

@@ -64,7 +64,7 @@
           <div class="absolute inset-0">
             <div
               id="userCard"
-              class="absolute right-4 -top-4 flex items-center space-x-3 rounded-xl bg-fondo-principal p-3 shadow-sm transition-all lg:-right-6 xl:-right-12 lg:top-0"
+              class="absolute right-4 -top-4 flex items-center space-x-3 rounded-xl bg-white p-3 shadow-sm transition-all lg:-right-6 xl:-right-12 lg:top-0"
             >
               <div class="flex -space-x-2">
                 <img
@@ -90,7 +90,7 @@
             </div>
             <div
               id="paymentCard"
-              class="absolute -bottom-4 left-4 rounded-xl bg-fondo-principal p-6 shadow-sm transition-all md:-bottom-16 md:left-0 md:p-4"
+              class="absolute -bottom-4 left-4 rounded-xl bg-white p-6 shadow-sm transition-all md:-bottom-16 md:left-0 md:p-4"
             >
               <div class="space-y-2">
                 <h4 class="mb-2">Tratamientos realizados</h4>

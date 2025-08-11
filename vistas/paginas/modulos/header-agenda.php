@@ -1,49 +1,42 @@
-    <!-- Header -->
-    <header class="bg-transparent p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
-      <div class="flex justify-between items-center">
-        <!-- Botón Regresar -->
-        <a
-          href="/"
-          class="w-fit flex justify-center items-center focus:outline-none gap-2 btn suave border border-borde"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-chevron-left-icon lucide-chevron-left w-5 h-5"
-          >
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-          Regresar
-        </a>
-
-        <!-- Botón Historial de Citas -->
-        <a
-          href="/"
-          class="w-fit flex justify-center items-center focus:outline-none gap-2 btn suave border border-borde"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-clock4-icon lucide-clock-4 w-5 h-5"
-          >
-            <path d="M12 6v6l4 2" />
-            <circle cx="12" cy="12" r="10" />
-          </svg>
-          Historial de Citas
-        </a>
-      </div>
-    </header>
+<!-- Header -->
+<header class="bg-transparent p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+  <!-- Barra superior -->
+  <div class="flex items-center justify-between">
+    <button
+      class="rounded-xl h-11 px-4 gap-2 border border-gray-200 bg-white shadow-sm hover:bg-gray-50 cursor-pointer flex items-center"
+    >
+      <svg
+        class="h-5 w-5 text-slate-700"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        ></path>
+      </svg>
+      <span class="font-semibold text-slate-700">Regresar</span>
+    </button>
+    <button
+      class="rounded-xl h-11 px-4 gap-2 border border-gray-200 bg-white shadow-sm hover:bg-gray-50 cursor-pointer flex items-center"
+    >
+      <svg
+        class="h-5 w-5 text-slate-700"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        ></path>
+      </svg>
+      <span class="font-semibold text-slate-700">Historial de Citas</span>
+    </button>
+  </div>
+</header>
