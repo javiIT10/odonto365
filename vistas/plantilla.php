@@ -31,9 +31,7 @@ $obtenerRutas = array_column($rutasEspecialidades, "ruta");
       <?php
       // Cargar el header
         if ($pagina) {
-          if (in_array($pagina, $obtenerRutas)) {
-            include "vistas/paginas/modulos/header-especialistas.php";
-          } elseif ($pagina === "agenda") {
+          if ($pagina === "agenda") {
             include "vistas/paginas/modulos/header-agenda.php";
           } elseif ($pagina === "perfil") {
             include "vistas/paginas/modulos/header-perfil.php";

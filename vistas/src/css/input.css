@@ -239,4 +239,19 @@
       transform: translate(-50%, -50%) scale(0.95);
     }
   }
+
+  .modal {
+    display: none;
+  }
+  .modal.active {
+    display: flex;
+  }
+  .carousel-container {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .carousel-container::-webkit-scrollbar {
+    display: none;
+  }
 }

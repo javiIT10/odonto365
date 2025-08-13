@@ -11,11 +11,11 @@ Class ModeloEspecialistas
 
             $sql = "SELECT 
                         s.id AS id,
-                        s.nombre AS name,
-                        e.especialidad_nombre AS specialty,
-                        s.imagen AS image,
-                        s.descripcion AS description,
-                        s.certificaciones AS certifications
+                        s.nombre AS nombre,
+                        e.especialidad_nombre AS especialidad,
+                        s.imagen AS foto,
+                        s.descripcion AS descripcion,
+                        s.certificaciones AS certificaciones
                     FROM especialidades e
                     INNER JOIN especialistas s 
                         ON s.id_especialidad = e.especialidad_id
@@ -29,7 +29,7 @@ Class ModeloEspecialistas
 
             // Convertir 'certificaciones' en array
             foreach ($resultados as &$fila) {
-                $fila['certifications'] = array_map('trim', explode('|', $fila['certifications']));
+                $fila['certificaciones'] = array_map('trim', explode('|', $fila['certificaciones']));
             }
 
             return $resultados;
