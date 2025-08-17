@@ -259,7 +259,7 @@
               />
               <input
                 type="hidden"
-                name="especialistaId"
+                name="especialista_id"
                 id="form-especialista-id"
                 value="<?php echo $especialistaSeleccionado['id']; ?>"
               />
@@ -273,9 +273,9 @@
               <input type="hidden" name="hora" id="form-hora" value="" />
               <input
                 type="hidden"
-                name="precio"
+                name="total"
                 id="form-precio"
-                value="<?php echo number_format((float)'200', 2, '.', ',')  ?>"
+                value="<?php echo number_format((float)'150', 2, '.', ',')  ?>"
               />
 
               <button

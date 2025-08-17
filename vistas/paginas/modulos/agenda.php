@@ -1,615 +1,1019 @@
-    <?php
-    if (!isset($_POST['especialistaId']) || empty($_POST['especialistaId'])) {
-    // Redirigir a la página principal
-    header("Location: /sistema-citas-odonto365/");
-    exit();
-  
-    }
+<?php
 
-  // Recibir datos de la página anterior
-    $datosCita = [
-        'especialidad' => $_POST['especialidad'] ?? 'Ortodoncia',
-        'especialista' => $_POST['especialista'] ?? 'Dra. María González',
-        'fecha' => $_POST['fecha'] ?? '2025-08-14T00:00:00.000Z',
-        'hora' => $_POST['hora'] ?? '11:00',
-        'precio' => $_POST['precio'] ?? 1500,
-        'especialistaId' => $_POST['especialistaId'] ?? 1
+// Configuración de zona horaria
+date_default_timezone_set('America/Mexico_City');
+
+// Función para recibir datos POST
+function obtenerDatosCita() {
+    $datosPorDefecto = [
+        'especialista_id' => 1,
+        'especialista' => 'Dra. María González',
+        'especialidad' => 'Ortodoncia',
+        'fecha' => '2025-08-14',
+        'hora' => '11:00',
+        'total' => 150
     ];
 
-    // Convertir fecha ISO a objeto Date de PHP
-    $fechaCita = new DateTime($datosCita['fecha']);
-
-    // Eventos ocupados simulados
-    $eventosOcupados = [
-        ['fecha' => '2025-08-10', 'hora' => '12:00'],
-        ['fecha' => '2025-08-10', 'hora' => '13:00'],
-        ['fecha' => '2025-08-11', 'hora' => '11:00'],
-        ['fecha' => '2025-08-11', 'hora' => '17:00'],
-        ['fecha' => '2025-08-12', 'hora' => '14:00'],
-        ['fecha' => '2025-08-13', 'hora' => '17:00'],
-        ['fecha' => '2025-08-14', 'hora' => '11:00'],
-        ['fecha' => '2025-08-15', 'hora' => '12:00'],
-        ['fecha' => '2025-08-16', 'hora' => '15:00'],
+    //  Validar si existe un id de especialista POST
+    if (!isset($_POST['especialista_id'])) {
+      header("Location: http://localhost/sistema-citas-odonto365/");
+      exit;
+    }
+    
+    // Si vienen datos por POST, los usamos; si no, usamos los por defecto
+    return [
+        'especialista_id' => $POST['especialista_id'] ?? $datosPorDefecto['especialista_id'],
+        'especialista' => $_POST['especialista'] ?? $datosPorDefecto['especialista'],
+        'especialidad' => $_POST['especialidad'] ?? $datosPorDefecto['especialidad'],
+        'fecha' => $_POST['fecha'] ?? $datosPorDefecto['fecha'],
+        'hora' => $_POST['hora'] ?? $datosPorDefecto['hora'],
+        'total' => floatval($_POST['total'] ?? $datosPorDefecto['total'])
     ];
+}
 
-    // Verificar si hay conflicto
-    $fechaClave = $fechaCita->format('Y-m-d');
-    $tieneConflicto = false;
-    foreach ($eventosOcupados as $evento) {
-        if ($evento['fecha'] === $fechaClave && $evento['hora'] === $datosCita['hora']) {
-            $tieneConflicto = true;
-            break;
-        }
-    }
+$datosCita = obtenerDatosCita();
+?>
+<!-- Loader -->
+<div
+  id="loader"
+  class="fixed inset-0 bg-white bg-opacity-80 flex flex-col items-center justify-center z-50 hidden"
+>
+  <svg
+    class="animate-spin h-10 w-10 text-blue-700 mb-3"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      class="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      stroke-width="4"
+    ></circle>
+    <path
+      class="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+    ></path>
+  </svg>
+  <p class="text-blue-800 font-semibold font-montserrat">
+    Cargando disponibilidad...
+  </p>
+</div>
 
-    // Generar código de cita
-    function generarCodigoCita($fecha) {
-        $año = $fecha->format('Y');
-        $mes = $fecha->format('m');
-        $dia = $fecha->format('d');
-        $digitosAleatorios = rand(1000, 9999);
-        return "CITA-{$año}{$mes}{$dia}-{$digitosAleatorios}";
-    }
+<main class="mx-auto w-full max-w-7xl px-4 py-6">
 
-    $codigoCita = $tieneConflicto ? null : generarCodigoCita($fechaCita);
-
-    // Constantes
-    $horas = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-    $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    $diasSemanaCorto = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-    $mesesCorto = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-    ?>
-
-    <main class="min-h-screen bg-slate-50">
-        <div class="mx-auto w-full max-w-7xl px-4 py-6">
-
-            <!-- Layout responsive -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Columna izquierda: Calendario -->
-                <div class="space-y-6">
-                    <?php if ($tieneConflicto): ?>
-                    <!-- Mensaje de error cuando hay conflicto -->
-                    <div class="rounded-2xl border border-borde bg-white p-6 shadow-sm">
-                        <div class="text-center space-y-4">
-                            <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
-                                <i data-lucide="clock" class="h-8 w-8 text-red-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-semibold text-red-700 font-montserrat mb-2">Horario No Disponible</h3>
-                                <p class="text-red-600">
-                                    El horario seleccionado ya está ocupado. Por favor, utiliza el botón "Modificar" para seleccionar
-                                    una nueva fecha y hora disponible.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <?php else: ?>
-                    <!-- Leyendas -->
-                    <div class="rounded-2xl border border-borde bg-white p-4 shadow-sm">
-                        <div class="flex flex-col items-center gap-4 md:flex-row md:items-center md:gap-6">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-borde bg-white">
-                                <i data-lucide="calendar" class="h-5 w-5 text-slate-700"></i>
-                            </div>
-                            <div class="flex w-full flex-wrap items-center justify-center gap-4 md:justify-start">
-                                <div class="flex items-center gap-2">
-                                    <span class="inline-block h-4 w-6 rounded-md bg-emerald-500"></span>
-                                    <span class="text-slate-600 font-medium">Hoy</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="inline-block h-4 w-6 rounded-md bg-blue-600"></span>
-                                    <span class="text-slate-600 font-medium">Seleccionado</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="inline-block h-4 w-6 rounded-md bg-slate-200"></span>
-                                    <span class="text-slate-600 font-medium">Ocupado</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Navegación de mes y ventana -->
-                    <div class="flex items-center justify-between">
-                        <button id="anterior-btn" class="h-12 w-12 rounded-full border border-borde bg-white text-slate-700 grid place-items-center transition hover:border-blue-300 cursor-pointer">
-                            <i data-lucide="chevron-left" class="h-5 w-5"></i>
-                        </button>
-                        <h2 id="mes-titulo" class="text-xl font-semibold tracking-tight text-blue-800 font-montserrat">
-                            <?php echo ucfirst($meses[$fechaCita->format('n') - 1]) . ' ' . $fechaCita->format('Y'); ?>
-                        </h2>
-                        <button id="siguiente-btn" class="h-12 w-12 rounded-full border border-borde bg-white text-slate-700 grid place-items-center transition hover:border-blue-300 cursor-pointer">
-                            <i data-lucide="chevron-right" class="h-5 w-5"></i>
-                        </button>
-                    </div>
-
-                    <!-- Selector de días (visual) -->
-                    <div id="dias-grid" class="grid grid-cols-4 gap-4">
-                        <!-- Los días se generarán dinámicamente -->
-                    </div>
-
-                    <!-- Grilla de horas (visual) -->
-                    <div id="horas-grid" class="grid grid-cols-4 gap-4">
-                        <!-- Las horas se generarán dinámicamente -->
-                    </div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Columna derecha: Resumen de la Cita -->
-                <div class="lg:sticky lg:top-6 lg:h-fit">
-                    <section>
-                        <div class="rounded-2xl border border-borde bg-white p-5 shadow-sm">
-                            <h3 class="text-2xl font-extrabold tracking-tight text-blue-800 font-montserrat">
-                                Resumen de la Cita
-                            </h3>
-
-                            <!-- Especialidad -->
-                            <div class="mt-6">
-                                <div class="text-xl font-semibold text-blue-900 font-montserrat">Especialidad</div>
-                                <div class="mt-3 rounded-xl bg-slate-100 px-4 py-3 text-slate-600"><?php echo $datosCita['especialidad']; ?></div>
-                            </div>
-
-                            <!-- Especialista -->
-                            <div class="mt-6">
-                                <div class="text-xl font-semibold text-blue-900 font-montserrat">Especialista</div>
-                                <div class="mt-3 flex items-center gap-3 text-slate-700">
-                                    <i data-lucide="stethoscope" class="h-5 w-5 text-blue-700"></i>
-                                    <span class="text-lg"><?php echo $datosCita['especialista']; ?></span>
-                                </div>
-                            </div>
-
-                            <!-- Fecha y Hora -->
-                            <div class="mt-6">
-                                <div class="text-xl font-semibold text-blue-900 font-montserrat">Fecha y Hora</div>
-                                <div class="mt-3 flex flex-col gap-3 text-slate-700">
-                                    <div class="flex items-center gap-3">
-                                        <i data-lucide="calendar" class="h-5 w-5 text-blue-700"></i>
-                                        <span class="text-lg capitalize">
-                                            <?php 
-                                            $fechaFormateada = $fechaCita->format('l, j \d\e F \d\e Y');
-                                            $fechaFormateada = str_replace(
-                                                ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                                                ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'],
-                                                $fechaFormateada
-                                            );
-                                            $fechaFormateada = str_replace(
-                                                ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-                                                ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
-                                                $fechaFormateada
-                                            );
-                                            echo $fechaFormateada;
-                                            ?>
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <i data-lucide="clock" class="h-5 w-5 text-blue-700"></i>
-                                        <span class="text-lg"><?php echo $datosCita['hora']; ?></span>
-                                    </div>
-                                </div>
-                                <button id="modificar-btn" class="mt-3 h-10 px-4 rounded-xl cursor-pointer bg-transparent border border-borde  hover:bg-slate-50 transition-colors">
-                                    Modificar
-                                </button>
-                            </div>
-
-                            <?php if (!$tieneConflicto && $codigoCita): ?>
-                            <!-- Código de Cita -->
-                            <div class="mt-6">
-                                <div class="text-xl font-semibold text-blue-900 font-montserrat">Código de Cita</div>
-                                <div class="mt-3 rounded-xl bg-blue-50 px-4 py-3 text-blue-800 font-mono text-lg font-semibold">
-                                    <?php echo $codigoCita; ?>
-                                </div>
-                            </div>
-
-                            <!-- Total -->
-                            <div class="h-px bg-slate-200 my-6"></div>
-                            <div class="flex items-start justify-between">
-                                <div class="text-xl font-semibold text-blue-900 font-montserrat">Total a pagar:</div>
-                                <div class="text-2xl font-bold text-emerald-600 font-montserrat">
-                                    $<?php echo number_format($datosCita['precio'], 2); ?>
-                                </div>
-                            </div>
-                            <div class="mt-2 text-slate-400">Consulta especializada</div>
-
-                            <button class="mt-5 h-12 w-full rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-lg gap-2 cursor-pointer transition-colors flex items-center justify-center">
-                                <i data-lucide="calendar" class="h-5 w-5"></i>
-                                Preagendar Cita
-                            </button>
-                            <?php endif; ?>
-                        </div>
-                    </section>
-                </div>
-            </div>
-
-            <!-- Modal de modificación -->
-            <div id="modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
-                <div class="bg-white rounded-2xl max-w-md mx-4 p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="font-montserrat text-xl font-semibold">Modificar Cita</h2>
-                        <button id="cerrar-modal" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                            <i data-lucide="x" class="h-5 w-5"></i>
-                        </button>
-                    </div>
-
-                    <!-- Toggle de vista -->
-                    <div class="flex rounded-lg bg-slate-100 p-1 mb-4">
-                        <button id="tab-fecha" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors bg-white text-blue-700 shadow-sm">
-                            Fecha
-                        </button>
-                        <button id="tab-hora" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors text-slate-600 hover:text-slate-900 opacity-50 cursor-not-allowed" disabled>
-                            Hora
-                        </button>
-                    </div>
-
-                    <!-- Vista de fecha -->
-                    <div id="vista-fecha" class="space-y-4">
-                        <!-- Navegación del mes -->
-                        <div class="flex items-center justify-between">
-                            <button id="mes-anterior" class="p-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors">
-                                <i data-lucide="chevron-left" class="h-4 w-4"></i>
-                            </button>
-                            <h3 id="mes-modal" class="font-semibold font-montserrat"></h3>
-                            <button id="mes-siguiente" class="p-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors">
-                                <i data-lucide="chevron-right" class="h-4 w-4"></i>
-                            </button>
-                        </div>
-
-                        <!-- Días de la semana -->
-                        <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-slate-600">
-                            <div class="p-2">dom</div>
-                            <div class="p-2">lun</div>
-                            <div class="p-2">mar</div>
-                            <div class="p-2">mié</div>
-                            <div class="p-2">jue</div>
-                            <div class="p-2">vie</div>
-                            <div class="p-2">sáb</div>
-                        </div>
-
-                        <!-- Calendario -->
-                        <div id="calendario-modal" class="grid grid-cols-7 gap-1">
-                            <!-- Los días se generarán dinámicamente -->
-                        </div>
-                    </div>
-
-                    <!-- Vista de hora -->
-                    <div id="vista-hora" class="space-y-4 hidden">
-                        <h3 id="fecha-seleccionada-modal" class="font-semibold font-montserrat text-center"></h3>
-                        <div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto" id="horas-modal">
-                            <!-- Las horas se generarán dinámicamente -->
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <!-- Layout responsive -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Columna izquierda: Calendario -->
+    <div class="space-y-6">
+      <!-- Mensaje de error cuando hay conflicto -->
+      <div
+        id="mensajeConflicto"
+        class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hidden"
+      >
+        <div class="text-center space-y-4">
+          <div
+            class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center"
+          >
+            <svg
+              class="h-8 w-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold text-red-700 font-montserrat mb-2">
+              Horario No Disponible
+            </h3>
+            <p class="text-red-600">
+              El horario seleccionado se solapa con una cita existente o es una
+              fecha pasada. Por favor, utiliza el botón "Modificar" para
+              seleccionar una nueva fecha y hora disponible.
+            </p>
+          </div>
         </div>
-    </main>
+      </div>
 
-    <script>
-        // Inicializar Lucide icons
-        lucide.createIcons();
+      <!-- Leyendas -->
+      <div
+        id="leyendas"
+        class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div
+          class="flex flex-col items-center gap-4 md:flex-row md:items-center md:gap-6"
+        >
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white"
+          >
+            <svg
+              class="h-5 w-5 text-slate-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              ></path>
+            </svg>
+          </div>
+          <div
+            class="flex w-full flex-wrap items-center justify-center gap-4 md:justify-start"
+          >
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-block h-4 w-6 rounded-md bg-emerald-500"
+              ></span>
+              <span class="text-slate-600 font-medium">Hoy</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-block h-4 w-6 rounded-md bg-blue-600"></span>
+              <span class="text-slate-600 font-medium">Seleccionado</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-block h-4 w-6 rounded-md bg-slate-200"></span>
+              <span class="text-slate-600 font-medium">Ocupado</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        // Datos de PHP convertidos a JavaScript
-        const datosCita = <?php echo json_encode($datosCita); ?>;
-        const eventosOcupados = <?php echo json_encode($eventosOcupados); ?>;
-        const tieneConflicto = <?php echo json_encode($tieneConflicto); ?>;
-        const horas = <?php echo json_encode($horas); ?>;
-        const meses = <?php echo json_encode($meses); ?>;
-        const diasSemanaCorto = <?php echo json_encode($diasSemanaCorto); ?>;
-        const mesesCorto = <?php echo json_encode($mesesCorto); ?>;
+      <!-- Navegación de mes y ventana -->
+      <div id="navegacion" class="flex items-center justify-between">
+        <button
+          id="btnAnterior"
+          class="h-12 w-12 rounded-full border border-slate-200 bg-white text-slate-700 flex items-center justify-center transition-all duration-200 font-medium hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95 cursor-pointer"
+        >
+          <svg
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
+          </svg>
+        </button>
+        <h2
+          id="etiquetaMes"
+          class="text-xl font-semibold tracking-tight text-blue-800 font-montserrat"
+        ></h2>
+        <button
+          id="btnSiguiente"
+          class="h-12 w-12 rounded-full border border-slate-200 bg-white text-slate-700 flex items-center justify-center transition-all duration-200 font-medium hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95 cursor-pointer"
+        >
+          <svg
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5l7 7-7 7"
+            ></path>
+          </svg>
+        </button>
+      </div>
 
-        // Variables globales
-        let fechaCita = new Date(datosCita.fecha);
-        let fechaInicioVentana = new Date(fechaCita);
-        fechaInicioVentana.setDate(fechaInicioVentana.getDate() - 3);
-        
-        let mesModalActual = new Date();
-        let fechaModalSeleccionada = null;
-        let horaModalSeleccionada = null;
-        let vistaModal = 'fecha';
+      <!-- Selector de días -->
+      <div id="selectorDias" class="grid grid-cols-4 gap-4"></div>
 
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
+      <!-- Grilla de horas -->
+      <div id="grillaHoras" class="grid grid-cols-4 gap-4"></div>
+    </div>
 
-        // Funciones de utilidad
-        function formatearFecha(fecha) {
-            return fecha.toLocaleDateString('es-ES', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
-        }
+    <!-- Columna derecha: Resumen de la Cita -->
+    <div class="lg:sticky lg:top-6 lg:h-fit">
+      <section>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3
+            class="text-2xl font-extrabold tracking-tight text-blue-800 font-montserrat"
+          >
+            Resumen de la Cita
+          </h3>
 
-        function esDomingo(fecha) {
-            return fecha.getDay() === 0;
-        }
+          <!-- Especialidad -->
+          <div class="mt-6">
+            <div class="text-xl font-semibold text-blue-900 font-montserrat">
+              Especialidad
+            </div>
+            <div
+              class="mt-3 rounded-xl bg-slate-100 px-4 py-3 text-slate-600 font-medium border border-slate-200"
+            >
+              <?php echo htmlspecialchars($datosCita['especialidad']); ?>
+            </div>
+          </div>
 
-        function esMismoDia(a, b) {
-            return a.getFullYear() === b.getFullYear() && 
-                   a.getMonth() === b.getMonth() && 
-                   a.getDate() === b.getDate();
-        }
+          <!-- Especialista -->
+          <div class="mt-6">
+            <div class="text-xl font-semibold text-blue-900 font-montserrat">
+              Especialista
+            </div>
+            <div class="mt-3 flex items-center gap-3 text-slate-700">
+              <svg
+                class="h-5 w-5 text-blue-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              <span class="text-lg font-medium"
+                ><?php echo htmlspecialchars($datosCita['especialista']); ?></span
+              >
+            </div>
+          </div>
 
-        function sumarDias(fecha, dias) {
-            const nueva = new Date(fecha);
-            nueva.setDate(nueva.getDate() + dias);
-            return nueva;
-        }
+          <!-- Fecha y Hora -->
+          <div class="mt-6">
+            <div class="text-xl font-semibold text-blue-900 font-montserrat">
+              Fecha y Hora
+            </div>
+            <div class="mt-3 flex flex-col gap-3 text-slate-700">
+              <div class="flex items-center gap-3">
+                <svg
+                  class="h-5 w-5 text-blue-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                <span
+                  id="fechaTexto"
+                  class="text-lg font-medium capitalize"
+                ></span>
+              </div>
+              <div class="flex items-center gap-3">
+                <svg
+                  class="h-5 w-5 text-blue-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                <span id="horaTexto" class="text-lg font-medium"
+                  ><?php echo htmlspecialchars($datosCita['hora']); ?></span
+                >
+              </div>
+            </div>
+            <button
+              id="btnModificar"
+              class="mt-3 h-10 px-4 rounded-xl cursor-pointer bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 font-medium"
+            >
+              Modificar
+            </button>
+          </div>
 
-        function estaOcupado(dia, hora) {
-            if (esDomingo(dia)) return true;
-            const fechaClave = dia.toISOString().split('T')[0];
-            return eventosOcupados.some(e => e.fecha === fechaClave && e.hora === hora);
-        }
+          <!-- Código de Cita -->
+          <div id="codigoCitaContainer" class="mt-6">
+            <div class="text-xl font-semibold text-blue-900 font-montserrat">
+              Código de Cita
+            </div>
+            <div
+              id="codigoCita"
+              class="mt-3 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-blue-800 font-mono text-lg font-semibold"
+            ></div>
+          </div>
 
-        // Generar vista del calendario principal
-        function generarCalendario() {
-            if (tieneConflicto) return;
+          <!-- Total -->
+          <div id="totalContainer">
+            <div class="w-full h-px bg-slate-200 my-6"></div>
+            <div class="flex items-start justify-between">
+              <div class="text-xl font-semibold text-blue-900 font-montserrat">
+                Total a pagar:
+              </div>
+              <div class="text-2xl font-bold text-emerald-600 font-montserrat">
+                $<?php echo number_format($datosCita['total'], 2); ?>
+              </div>
+            </div>
+            <div class="mt-2 text-slate-400 font-medium">
+              Consulta especializada
+            </div>
 
-            const diasGrid = document.getElementById('dias-grid');
-            const horasGrid = document.getElementById('horas-grid');
-            
-            diasGrid.innerHTML = '';
-            horasGrid.innerHTML = '';
+            <button
+              class="mt-5 h-12 w-full rounded-xl bg-blue-700 hover:bg-blue-800 active:bg-blue-900 text-white text-lg gap-2 cursor-pointer transition-all duration-200 font-semibold border-0 flex items-center justify-center"
+            >
+              <svg
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                ></path>
+              </svg>
+              Preagendar Cita
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
 
-            // Generar 4 días visibles
-            const diasVisibles = [];
-            for (let i = 0; i < 4; i++) {
-                diasVisibles.push(sumarDias(fechaInicioVentana, i));
-            }
+  <!-- Modal de modificación -->
+  <div
+    id="modal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50"
+  >
+    <div
+      class="max-w-md w-full mx-auto my-8 border border-slate-200 bg-white rounded-2xl shadow-lg"
+    >
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-montserrat text-xl font-semibold text-blue-800">
+            Modificar Cita
+          </h3>
+          <button
+            id="btnCerrarModal"
+            class="text-slate-400 hover:text-slate-600"
+          >
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
 
-            // Generar días
-            diasVisibles.forEach(dia => {
-                const seleccionado = esMismoDia(dia, fechaCita);
-                const esHoy = esMismoDia(dia, hoy);
-                const domingo = esDomingo(dia);
+        <!-- Toggle de vista -->
+        <div
+          class="flex rounded-lg bg-slate-100 p-1 border border-slate-200 mb-4"
+        >
+          <button
+            id="btnVistaFecha"
+            class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 border-0 bg-white text-blue-700 shadow-sm border border-slate-200"
+          >
+            Fecha
+          </button>
+          <button
+            id="btnVistaHora"
+            class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 border-0 text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer opacity-50 cursor-not-allowed"
+          >
+            Hora
+          </button>
+        </div>
 
-                const div = document.createElement('div');
-                div.className = `rounded-3xl border border-borde p-4 text-center relative select-none ${
-                    domingo ? 'bg-slate-100 text-slate-400 border border-borde-transparent cursor-not-allowed' :
-                    seleccionado ? 'bg-blue-700 text-white border border-borde-blue-700 shadow' :
-                    'bg-white text-slate-700 '
-                }`;
+        <!-- Vista de fecha -->
+        <div id="vistaFecha" class="space-y-4">
+          <!-- Navegación del mes -->
+          <div class="flex items-center justify-between">
+            <button
+              id="btnMesAnterior"
+              class="p-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-all duration-200 border-0 bg-transparent"
+            >
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                ></path>
+              </svg>
+            </button>
+            <h3
+              id="mesModalTitulo"
+              class="font-semibold font-montserrat text-blue-800"
+            ></h3>
+            <button
+              id="btnMesSiguiente"
+              class="p-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-all duration-200 border-0 bg-transparent"
+            >
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                ></path>
+              </svg>
+            </button>
+          </div>
 
-                if (esHoy) {
-                    const punto = document.createElement('span');
-                    punto.className = `absolute left-2 top-2 h-2 w-2 rounded-full ${
-                        seleccionado && !domingo ? 'bg-white' : 'bg-emerald-500'
-                    }`;
-                    div.appendChild(punto);
-                }
+          <!-- Días de la semana -->
+          <div
+            class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-slate-600"
+          >
+            <div class="p-2 font-semibold">dom</div>
+            <div class="p-2 font-semibold">lun</div>
+            <div class="p-2 font-semibold">mar</div>
+            <div class="p-2 font-semibold">mié</div>
+            <div class="p-2 font-semibold">jue</div>
+            <div class="p-2 font-semibold">vie</div>
+            <div class="p-2 font-semibold">sáb</div>
+          </div>
 
-                div.innerHTML += `
-                    <div class="${seleccionado && !domingo ? 'text-white/90' : 'text-blue-900/90'} text-base capitalize">
-                        ${diasSemanaCorto[dia.getDay()]}
-                    </div>
-                    <div class="text-3xl font-bold leading-tight">${dia.getDate()}</div>
-                    <div class="${seleccionado && !domingo ? 'text-white/90' : 'text-blue-900/90'} text-sm">
-                        ${mesesCorto[dia.getMonth()]}
-                    </div>
-                `;
+          <!-- Calendario -->
+          <div id="calendarioModal" class="grid grid-cols-7 gap-1"></div>
+        </div>
 
-                diasGrid.appendChild(div);
-            });
+        <!-- Vista de hora -->
+        <div id="vistaHora" class="space-y-4 hidden">
+          <h3
+            id="fechaSeleccionadaTitulo"
+            class="font-semibold font-montserrat text-center text-blue-800"
+          ></h3>
+          <div
+            id="horasModal"
+            class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
 
-            // Generar horas
-            horas.forEach(hora => {
-                diasVisibles.forEach((dia, idxDia) => {
-                    const ocupado = estaOcupado(dia, hora);
-                    const seleccionado = esMismoDia(dia, fechaCita) && hora === datosCita.hora && !ocupado;
+<script>
+  // Datos iniciales desde PHP
+  const rutaPrincipal = "<?php echo $ruta; ?>";
+  const datosCitaIniciales = <?php echo json_encode($datosCita); ?>;
+  let eventosOcupados = [];
+  
+  // Variables globales
+  let datosCita = {
+      especialista_id: datosCitaIniciales.especialista_id,
+      especialista: datosCitaIniciales.especialista,
+      especialidad: datosCitaIniciales.especialidad,
+      fecha: new Date(datosCitaIniciales.fecha),
+      hora: datosCitaIniciales.hora,
+      total: datosCitaIniciales.total
+  };
 
-                    const div = document.createElement('div');
-                    div.className = `h-12 rounded-2xl border border-borde text-sm font-semibold flex items-center justify-center select-none ${
-                        ocupado ? 'bg-slate-100 text-slate-400 border border-borde-transparent' :
-                        seleccionado ? 'bg-blue-600 text-white border border-borde-blue-600 shadow' :
-                        'bg-white text-blue-900 '
-                    }`;
-                    div.textContent = hora;
+  async function cargarEventos() {
+    // Mostrar la pantalla de carga
+    document.getElementById('loader').classList.remove('hidden');
 
-                    horasGrid.appendChild(div);
-                });
-            });
-        }
+    try {
+      // Esperar un momento para que el spinner sea visible
+      await new Promise(resolve => setTimeout(resolve, 300)); // 300 ms
 
-        // Modal
-        const modal = document.getElementById('modal');
-        const modificarBtn = document.getElementById('modificar-btn');
-        const cerrarModalBtn = document.getElementById('cerrar-modal');
+      const response = await
+      fetch(`${rutaPrincipal}controladores/agenda.controlador.php`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ especialista_id: datosCitaIniciales.especialista_id})
+      });
 
-        function abrirModal() {
-            modal.classList.add('active');
-            vistaModal = 'fecha';
-            actualizarVistaModal();
-            generarCalendarioModal();
-        }
+      if (!response.ok) {
+        throw new Error("Error al traer los eventos");
+      }
 
-        function cerrarModal() {
-            modal.classList.remove('active');
-        }
+      const data = await response.json();
+      eventosOcupados = data;
 
-        if (modificarBtn) {
-            modificarBtn.addEventListener('click', abrirModal);
-        }
-        cerrarModalBtn.addEventListener('click', cerrarModal);
+      console.log(eventosOcupados);
+      
 
-        // Tabs del modal
-        document.getElementById('tab-fecha').addEventListener('click', function() {
-            vistaModal = 'fecha';
-            actualizarVistaModal();
-        });
+      actualizarInterfaz();
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Hubo un problema al cargar la disponibilidad");
+    } finally {
+      // Ocualtar pantalla de carga
+      document.getElementById('loader').classList.add('hidden');
+    }
+  }
 
-        document.getElementById('tab-hora').addEventListener('click', function() {
-            if (fechaModalSeleccionada) {
-                vistaModal = 'hora';
-                actualizarVistaModal();
-                generarHorasModal();
-            }
-        });
+  // Constantes
+  const DIAS_SEMANA_CORTO = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+  const MESES = [
+      "enero", "febrero", "marzo", "abril", "mayo", "junio",
+      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+  ];
+  const HORAS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 
-        function actualizarVistaModal() {
-            const tabFecha = document.getElementById('tab-fecha');
-            const tabHora = document.getElementById('tab-hora');
-            const vistaFecha = document.getElementById('vista-fecha');
-            const vistaHora = document.getElementById('vista-hora');
+  // Fechas límite
+  const HOY = new Date();
+  HOY.setHours(0, 0, 0, 0);
+  const LIMITE_SUPERIOR = new Date(HOY);
+  LIMITE_SUPERIOR.setMonth(LIMITE_SUPERIOR.getMonth() + 2);
+  const MIN_INICIO_VENTANA = new Date(HOY);
+  const MAX_INICIO_VENTANA = new Date(LIMITE_SUPERIOR);
+  MAX_INICIO_VENTANA.setDate(MAX_INICIO_VENTANA.getDate() - 3);
 
-            if (vistaModal === 'fecha') {
-                tabFecha.className = 'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors bg-white text-blue-700 shadow-sm';
-                tabHora.className = `flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors text-slate-600 hover:text-slate-900 ${!fechaModalSeleccionada ? 'opacity-50 cursor-not-allowed' : ''}`;
-                vistaFecha.classList.remove('hidden');
-                vistaHora.classList.add('hidden');
-            } else {
-                tabFecha.className = 'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors text-slate-600 hover:text-slate-900';
-                tabHora.className = 'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors bg-white text-blue-700 shadow-sm';
-                vistaFecha.classList.add('hidden');
-                vistaHora.classList.remove('hidden');
-            }
-        }
+  // Estado de la aplicación
+  let fechaInicioVentana = calcularInicioVentana(datosCita.fecha);
+  let modalAbierto = false;
+  let vistaModal = "fecha";
+  let fechaModalSeleccionada = null;
+  let horaModalSeleccionada = null;
+  let mesModalActual = new Date();
 
-        // Navegación de mes en modal
-        document.getElementById('mes-anterior').addEventListener('click', function() {
-            mesModalActual.setMonth(mesModalActual.getMonth() - 1);
-            generarCalendarioModal();
-        });
+  // Utilidades de fecha
+  function inicioDeDia(d) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
 
-        document.getElementById('mes-siguiente').addEventListener('click', function() {
-            mesModalActual.setMonth(mesModalActual.getMonth() + 1);
-            generarCalendarioModal();
-        });
+  function sumarDias(d, cantidad) {
+      const nd = new Date(d);
+      nd.setDate(nd.getDate() + cantidad);
+      return nd;
+  }
 
-        function generarCalendarioModal() {
-            const mesNombre = meses[mesModalActual.getMonth()];
-            const año = mesModalActual.getFullYear();
-            document.getElementById('mes-modal').textContent = `${mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)} ${año}`;
+  function sumarMeses(d, cantidad) {
+      const nd = new Date(d);
+      nd.setMonth(nd.getMonth() + cantidad);
+      return nd;
+  }
 
-            const primerDia = new Date(año, mesModalActual.getMonth(), 1);
-            const ultimoDia = new Date(año, mesModalActual.getMonth() + 1, 0);
-            const calendarioModal = document.getElementById('calendario-modal');
-            
-            calendarioModal.innerHTML = '';
+  function esMismoDia(a, b) {
+      return a.getFullYear() === b.getFullYear() &&
+             a.getMonth() === b.getMonth() &&
+             a.getDate() === b.getDate();
+  }
 
-            // Días vacíos al inicio
-            for (let i = 0; i < primerDia.getDay(); i++) {
-                const div = document.createElement('div');
-                div.className = 'p-2';
-                calendarioModal.appendChild(div);
-            }
+  function esDomingo(d) {
+      return d.getDay() === 0;
+  }
 
-            // Días del mes
-            for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
-                const fecha = new Date(año, mesModalActual.getMonth(), dia);
-                const button = document.createElement('button');
-                button.textContent = dia;
-                
-                const esPasado = fecha < hoy;
-                const esHoy = esMismoDia(fecha, hoy);
-                const esDomingoModal = esDomingo(fecha);
-                const estaSeleccionado = fechaModalSeleccionada && esMismoDia(fecha, fechaModalSeleccionada);
-                const estaDeshabilitado = esPasado || esHoy || esDomingoModal;
-                
-                if (estaDeshabilitado) {
-                    button.className = 'p-2 text-sm rounded-lg transition-colors text-slate-300 cursor-not-allowed';
-                    button.disabled = true;
-                } else {
-                    button.className = `p-2 text-sm rounded-lg transition-colors ${
-                        estaSeleccionado ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 cursor-pointer'
-                    }`;
-                    button.addEventListener('click', function() {
-                        seleccionarFechaModal(fecha);
-                    });
-                }
-                
-                calendarioModal.appendChild(button);
-            }
-        }
+  function claveISOFecha(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${dd}`;
+  }
 
-        function seleccionarFechaModal(fecha) {
-            fechaModalSeleccionada = fecha;
-            horaModalSeleccionada = null;
-            
-            // Habilitar tab de hora
-            document.getElementById('tab-hora').disabled = false;
-            document.getElementById('tab-hora').classList.remove('opacity-50', 'cursor-not-allowed');
-            
-            // Cambiar a vista de hora
-            vistaModal = 'hora';
-            actualizarVistaModal();
-            generarHorasModal();
-        }
+  function fechaHoraCompleta(fecha, hora) {
+      const fechaStr = claveISOFecha(fecha);
+      return `${fechaStr} ${hora}`;
+  }
 
-        function generarHorasModal() {
-            if (!fechaModalSeleccionada) return;
-            
-            document.getElementById('fecha-seleccionada-modal').textContent = formatearFecha(fechaModalSeleccionada);
-            
-            const horasModal = document.getElementById('horas-modal');
-            horasModal.innerHTML = '';
-            
-            horas.forEach(hora => {
-                const fechaClave = fechaModalSeleccionada.toISOString().split('T')[0];
-                const estaOcupado = eventosOcupados.some(e => e.fecha === fechaClave && e.hora === hora);
-                const estaSeleccionado = horaModalSeleccionada === hora;
+  function sumarUnaHora(fechaHora) {
+      const [fechaParte, horaParte] = fechaHora.split(" ");
+      const [horas, minutos] = horaParte.split(":").map(Number);
 
-                const button = document.createElement('button');
-                button.className = `p-3 text-sm rounded-lg border border-borde transition-colors ${
-                    estaOcupado ? 'bg-slate-100 text-slate-400 cursor-not-allowed' :
-                    estaSeleccionado ? 'bg-blue-600 text-white border border-borde-blue-600' :
-                    'bg-white hover:bg-slate-50  cursor-pointer'
-                }`;
-                button.textContent = hora;
-                button.disabled = estaOcupado;
+      const fecha = new Date(fechaParte + "T" + horaParte + ":00");
+      fecha.setHours(fecha.getHours() + 1);
 
-                if (!estaOcupado) {
-                    button.addEventListener('click', function() {
-                        seleccionarHoraModal(hora);
-                    });
-                }
-                
-                horasModal.appendChild(button);
-            });
-        }
+      const nuevaFecha = claveISOFecha(fecha);
+      const nuevaHora = `${String(fecha.getHours()).padStart(2, "0")}:${String(fecha.getMinutes()).padStart(2, "0")}`;
 
-        function seleccionarHoraModal(hora) {
-            horaModalSeleccionada = hora;
+      return `${nuevaFecha} ${nuevaHora}`;
+  }
 
-            if (fechaModalSeleccionada) {
-                // Actualizar datos de la cita
-                datosCita.fecha = fechaModalSeleccionada.toISOString();
-                datosCita.hora = hora;
-                fechaCita = new Date(fechaModalSeleccionada);
+  function rangosSeSolapan(inicio1, fin1, inicio2, fin2) {
+      const fechaInicio1 = new Date(inicio1.replace(" ", "T") );
+      const fechaFin1 = new Date(fin1.replace(" ", "T"));
+      const fechaInicio2 = new Date(inicio2.replace(" ", "T"));
+      const fechaFin2 = new Date(fin2.replace(" ", "T"));
 
-                // Recargar la página con los nuevos datos
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '<?php echo $ruta; ?>agenda';
+      return fechaInicio1 < fechaFin2 && fechaInicio2 < fechaFin1;
+  }
 
-                Object.entries(datosCita).forEach(([key, value]) => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = String(value);
-                    form.appendChild(input);
-                });
+  function obtenerHorasOcupadasEnDia(dia, eventos) {
+      const fechaDia = claveISOFecha(dia);
+      const horasOcupadas = new Set();
 
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
+      eventos.forEach(evento => {
+          const inicioEvento = new Date(evento.cita_inicio.replace(" ", "T"));
+          const finEvento = new Date(evento.cita_fin.replace(" ", "T"));
+          
 
-        // Navegación del calendario principal
-        document.getElementById('anterior-btn').addEventListener('click', function() {
-            fechaInicioVentana = sumarDias(fechaInicioVentana, -4);
-            generarCalendario();
-        });
+          const horaActual = new Date(inicioEvento);
+          while (horaActual < finEvento) {
+              const fechaHoraActual = claveISOFecha(horaActual);
+              if (fechaHoraActual === fechaDia) {
+                  const horaStr = `${String(horaActual.getHours()).padStart(2, "0")}:${String(horaActual.getMinutes()).padStart(2, "0")}`;
+                  horasOcupadas.add(horaStr);
+              }
+              horaActual.setHours(horaActual.getHours() + 1);
+          }
+      });
 
-        document.getElementById('siguiente-btn').addEventListener('click', function() {
-            fechaInicioVentana = sumarDias(fechaInicioVentana, 4);
-            generarCalendario();
-        });
+      return horasOcupadas;
+  }
 
-        // Cerrar modal al hacer clic fuera
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                cerrarModal();
-            }
-        });
+  function calcularInicioVentana(fechaSeleccionada) {
+      const candidatoInicio = sumarDias(fechaSeleccionada, -3);
+      const tiempo = candidatoInicio.getTime();
+      const minTiempo = MIN_INICIO_VENTANA.getTime();
+      const maxTiempo = MAX_INICIO_VENTANA.getTime();
+      return new Date(Math.max(minTiempo, Math.min(maxTiempo, tiempo)));
+  }
 
-        // Inicializar
-        generarCalendario();
-        generarCalendarioModal();
-    </script>
+  function tieneConflicto() {
+      const fechaCitaInicio = inicioDeDia(datosCita.fecha);
+      const esFechaPasada = fechaCitaInicio < HOY;
 
+      if (esFechaPasada) {
+          return true;
+      }
+
+      const inicioNuevaCita = fechaHoraCompleta(datosCita.fecha, datosCita.hora);
+      const finNuevaCita = sumarUnaHora(inicioNuevaCita);
+
+      return eventosOcupados.some(evento =>
+          rangosSeSolapan(inicioNuevaCita, finNuevaCita, evento.cita_inicio, evento.cita_fin)
+      );
+  }
+
+  function estaOcupado(dia, hora) {
+      if (esDomingo(dia)) return true;
+
+      const horasOcupadasEnDia = obtenerHorasOcupadasEnDia(dia, eventosOcupados);
+      
+      return horasOcupadasEnDia.has(hora);
+  }
+
+  function generarCodigoCita(fecha) {
+      const año = fecha.getFullYear();
+      const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+      const dia = String(fecha.getDate()).padStart(2, "0");
+      const digitosAleatorios = Math.floor(1000 + Math.random() * 9000);
+      return `CITA-${año}${mes}${dia}-${digitosAleatorios}`;
+  }
+
+  function actualizarInterfaz() {
+      const conflicto = tieneConflicto();
+
+      // Mostrar/ocultar elementos según conflicto
+      document.getElementById('mensajeConflicto').classList.toggle('hidden', !conflicto);
+      document.getElementById('leyendas').classList.toggle('hidden', conflicto);
+      document.getElementById('navegacion').classList.toggle('hidden', conflicto);
+      document.getElementById('selectorDias').classList.toggle('hidden', conflicto);
+      document.getElementById('grillaHoras').classList.toggle('hidden', conflicto);
+      document.getElementById('codigoCitaContainer').classList.toggle('hidden', conflicto);
+      document.getElementById('totalContainer').classList.toggle('hidden', conflicto);
+
+      if (!conflicto) {
+          // Actualizar etiqueta de mes
+          const nombreMes = MESES[fechaInicioVentana.getMonth()];
+          const capitalizado = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+          document.getElementById('etiquetaMes').textContent = `${capitalizado} ${fechaInicioVentana.getFullYear()}`;
+
+          // Actualizar botones de navegación
+          const deshabilitarAnterior = inicioDeDia(fechaInicioVentana).getTime() <= MIN_INICIO_VENTANA.getTime();
+          const deshabilitarSiguiente = inicioDeDia(fechaInicioVentana).getTime() >= MAX_INICIO_VENTANA.getTime();
+
+          const btnAnterior = document.getElementById('btnAnterior');
+          const btnSiguiente = document.getElementById('btnSiguiente');
+
+          btnAnterior.disabled = deshabilitarAnterior;
+          btnSiguiente.disabled = deshabilitarSiguiente;
+
+          if (deshabilitarAnterior) {
+              btnAnterior.classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-50');
+              btnAnterior.classList.remove('hover:border-blue-300', 'hover:bg-blue-50', 'hover:text-blue-700', 'cursor-pointer');
+          } else {
+              btnAnterior.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-50');
+              btnAnterior.classList.add('hover:border-blue-300', 'hover:bg-blue-50', 'hover:text-blue-700', 'cursor-pointer');
+          }
+
+          if (deshabilitarSiguiente) {
+              btnSiguiente.classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-50');
+              btnSiguiente.classList.remove('hover:border-blue-300', 'hover:bg-blue-50', 'hover:text-blue-700', 'cursor-pointer');
+          } else {
+              btnSiguiente.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-50');
+              btnSiguiente.classList.add('hover:border-blue-300', 'hover:bg-blue-50', 'hover:text-blue-700', 'cursor-pointer');
+          }
+
+          // Generar días visibles
+          const diasVisibles = Array.from({ length: 4 }, (_, i) => sumarDias(fechaInicioVentana, i));
+
+          // Actualizar selector de días
+          const selectorDias = document.getElementById('selectorDias');
+          selectorDias.innerHTML = '';
+
+          diasVisibles.forEach(d => {
+              const seleccionado = esMismoDia(d, datosCita.fecha);
+              const hoy = esMismoDia(d, HOY);
+              const domingo = esDomingo(d);
+
+              const div = document.createElement('div');
+              div.className = `rounded-3xl border p-4 text-center relative select-none transition-all duration-200 ${
+                  domingo ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' :
+                  seleccionado ? 'bg-blue-700 text-white border-blue-700 shadow-md' :
+                  'bg-white text-slate-700 border-slate-200 hover:border-blue-200 hover:shadow-sm'
+              }`;
+
+              div.innerHTML = `
+                  ${hoy ? `<span class="absolute left-2 top-2 h-2 w-2 rounded-full bg-emerald-500 ${seleccionado && !domingo ? 'bg-white' : ''}"></span>` : ''}
+                  <div class="text-base capitalize font-medium ${seleccionado && !domingo ? 'text-white/90' : 'text-blue-900/90'}">
+                      ${DIAS_SEMANA_CORTO[d.getDay()]}
+                  </div>
+                  <div class="text-3xl font-bold leading-tight">${d.getDate()}</div>
+                  <div class="text-sm font-medium ${seleccionado && !domingo ? 'text-white/90' : 'text-blue-900/90'}">
+                      ${MESES[d.getMonth()].substring(0, 3)}
+                  </div>
+              `;
+
+              selectorDias.appendChild(div);
+          });
+
+          // Actualizar grilla de horas
+          const grillaHoras = document.getElementById('grillaHoras');
+          grillaHoras.innerHTML = '';
+
+          HORAS.forEach(hora => {
+              diasVisibles.forEach((dia, idxDia) => {
+                  const ocupado = estaOcupado(dia, hora);
+                  const seleccionado = esMismoDia(dia, datosCita.fecha) && hora === datosCita.hora && !ocupado;
+
+                  const div = document.createElement('div');
+                  div.className = `h-12 rounded-2xl border text-sm font-semibold flex items-center justify-center select-none transition-all duration-200 ${
+                      ocupado ? 'bg-slate-100 text-slate-400 border-slate-200' :
+                      !seleccionado ? 'bg-white text-blue-900 border-slate-200 hover:border-blue-200 hover:shadow-sm' :
+                      'bg-blue-600 text-white border-blue-600 shadow-md'
+                  }`;
+
+                  div.textContent = hora;
+                  grillaHoras.appendChild(div);
+              });
+          });
+
+          // Actualizar código de cita
+          const codigoCita = generarCodigoCita(datosCita.fecha);
+          document.getElementById('codigoCita').textContent = codigoCita;
+      }
+
+      // Actualizar fecha y hora en el resumen
+      const fechaTexto = new Intl.DateTimeFormat('es-ES', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+      }).format(datosCita.fecha);
+
+      document.getElementById('fechaTexto').textContent = fechaTexto;
+      document.getElementById('horaTexto').textContent = datosCita.hora;
+  }
+
+  function irAnterior() {
+      const deshabilitarAnterior = inicioDeDia(fechaInicioVentana).getTime() <= MIN_INICIO_VENTANA.getTime();
+      if (deshabilitarAnterior) return;
+
+      const nuevaFecha = sumarDias(fechaInicioVentana, -4);
+      const tiempo = nuevaFecha.getTime();
+      const minTiempo = MIN_INICIO_VENTANA.getTime();
+      const maxTiempo = MAX_INICIO_VENTANA.getTime();
+      fechaInicioVentana = new Date(Math.max(minTiempo, Math.min(maxTiempo, tiempo)));
+
+      actualizarInterfaz();
+  }
+
+  function irSiguiente() {
+      const deshabilitarSiguiente = inicioDeDia(fechaInicioVentana).getTime() >= MAX_INICIO_VENTANA.getTime();
+      if (deshabilitarSiguiente) return;
+
+      const nuevaFecha = sumarDias(fechaInicioVentana, 4);
+      const tiempo = nuevaFecha.getTime();
+      const minTiempo = MIN_INICIO_VENTANA.getTime();
+      const maxTiempo = MAX_INICIO_VENTANA.getTime();
+      fechaInicioVentana = new Date(Math.max(minTiempo, Math.min(maxTiempo, tiempo)));
+
+      actualizarInterfaz();
+  }
+
+  function abrirModal() {
+      modalAbierto = true;
+      vistaModal = "fecha";
+      fechaModalSeleccionada = null;
+      horaModalSeleccionada = null;
+      mesModalActual = new Date();
+
+      document.getElementById('modal').classList.remove('hidden');
+      actualizarModal();
+  }
+
+  function cerrarModal() {
+      modalAbierto = false;
+      document.getElementById('modal').classList.add('hidden');
+  }
+
+  function cambiarVistaModal(vista) {
+      if (vista === "hora" && !fechaModalSeleccionada) return;
+
+      vistaModal = vista;
+      actualizarModal();
+  }
+
+  function seleccionarFechaModal(fecha) {
+      fechaModalSeleccionada = fecha;
+      vistaModal = "hora";
+      actualizarModal();
+  }
+
+  function seleccionarHoraModal(hora) {
+      horaModalSeleccionada = hora;
+
+      if (fechaModalSeleccionada) {
+          const inicioNuevaCita = fechaHoraCompleta(fechaModalSeleccionada, hora);
+          const finNuevaCita = sumarUnaHora(inicioNuevaCita);
+
+          const hayConflicto = eventosOcupados.some(evento =>
+              rangosSeSolapan(inicioNuevaCita, finNuevaCita, evento.cita_inicio, evento.cita_fin)
+          );
+
+          if (!hayConflicto) {
+              datosCita.fecha = fechaModalSeleccionada;
+              datosCita.hora = hora;
+
+              fechaInicioVentana = calcularInicioVentana(fechaModalSeleccionada);
+              cargarEventos();
+          }
+
+          cerrarModal();
+      }
+  }
+
+  function navegarMesModal(direccion) {
+      const nuevoMes = direccion === "anterior" ? sumarMeses(mesModalActual, -1) : sumarMeses(mesModalActual, 1);
+
+      const limiteInferior = new Date(HOY.getFullYear(), HOY.getMonth(), 1);
+      const limiteSuperior = new Date(LIMITE_SUPERIOR.getFullYear(), LIMITE_SUPERIOR.getMonth(), 1);
+
+      if (nuevoMes >= limiteInferior && nuevoMes <= limiteSuperior) {
+          mesModalActual = nuevoMes;
+          actualizarModal();
+      }
+  }
+
+  function actualizarModal() {
+      // Actualizar botones de vista
+      const btnVistaFecha = document.getElementById('btnVistaFecha');
+      const btnVistaHora = document.getElementById('btnVistaHora');
+
+      if (vistaModal === "fecha") {
+          btnVistaFecha.className = "flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 border-0 bg-white text-blue-700 shadow-sm border border-slate-200";
+          btnVistaHora.className = `flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 border-0 text-slate-600 hover:text-slate-900 hover:bg-slate-50 ${!fechaModalSeleccionada ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`;
+      } else {
+          btnVistaFecha.className = "flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 border-0 text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer";
+          btnVistaHora.className = "flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 border-0 bg-white text-blue-700 shadow-sm border border-slate-200";
+      }
+
+      // Mostrar/ocultar vistas
+      document.getElementById('vistaFecha').classList.toggle('hidden', vistaModal !== "fecha");
+      document.getElementById('vistaHora').classList.toggle('hidden', vistaModal !== "hora");
+
+      if (vistaModal === "fecha") {
+          // Actualizar título del mes
+          const nombreMes = MESES[mesModalActual.getMonth()];
+          const capitalizado = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+          document.getElementById('mesModalTitulo').textContent = `${capitalizado} ${mesModalActual.getFullYear()}`;
+
+          // Generar calendario
+          const primerDia = new Date(mesModalActual.getFullYear(), mesModalActual.getMonth(), 1);
+          const ultimoDia = new Date(mesModalActual.getFullYear(), mesModalActual.getMonth() + 1, 0);
+          const diasDelMes = [];
+
+          // Días vacíos al inicio
+          const diaSemanaPrimero = primerDia.getDay();
+          for (let i = 0; i < diaSemanaPrimero; i++) {
+              diasDelMes.push(null);
+          }
+
+          // Días del mes
+          for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
+              diasDelMes.push(new Date(mesModalActual.getFullYear(), mesModalActual.getMonth(), dia));
+          }
+
+          const calendarioModal = document.getElementById('calendarioModal');
+          calendarioModal.innerHTML = '';
+
+          diasDelMes.forEach((dia, index) => {
+              const button = document.createElement('button');
+
+              if (!dia) {
+                  button.className = 'p-2';
+                  calendarioModal.appendChild(button);
+                  return;
+              }
+
+              const esHoy = esMismoDia(dia, HOY);
+              const esPasado = dia < HOY;
+              const esDomingoModal = esDomingo(dia);
+              const estaSeleccionado = fechaModalSeleccionada && esMismoDia(dia, fechaModalSeleccionada);
+              const estaDeshabilitado = esPasado || esHoy || esDomingoModal;
+
+              button.className = `p-2 text-sm rounded-lg transition-all duration-200 font-medium border-0 ${
+                  estaDeshabilitado ? 'text-slate-300 cursor-not-allowed bg-transparent' :
+                  !estaSeleccionado ? 'hover:bg-slate-100 cursor-pointer bg-transparent' :
+                  'bg-blue-600 text-white shadow-sm'
+              }`;
+
+              button.textContent = dia.getDate();
+              button.disabled = estaDeshabilitado;
+
+              if (!estaDeshabilitado) {
+                  button.onclick = () => seleccionarFechaModal(dia);
+              }
+
+              calendarioModal.appendChild(button);
+          });
+      } else if (vistaModal === "hora" && fechaModalSeleccionada) {
+          // Actualizar título de fecha seleccionada
+          const fechaTexto = new Intl.DateTimeFormat('es-ES', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+          }).format(fechaModalSeleccionada);
+
+          document.getElementById('fechaSeleccionadaTitulo').textContent = fechaTexto;
+
+          // Generar horas
+          const horasModal = document.getElementById('horasModal');
+          horasModal.innerHTML = '';
+
+          HORAS.forEach(hora => {
+              const horasOcupadasEnDia = obtenerHorasOcupadasEnDia(fechaModalSeleccionada, eventosOcupados);
+              const estaOcupado = horasOcupadasEnDia.has(hora);
+              const estaSeleccionado = horaModalSeleccionada === hora;
+
+              const button = document.createElement('button');
+              button.className = `p-3 text-sm rounded-lg border transition-all duration-200 font-semibold ${
+                  estaOcupado ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200' :
+                  !estaSeleccionado ? 'bg-white hover:bg-slate-50 border-slate-200 cursor-pointer hover:border-blue-200' :
+                  'bg-blue-600 text-white border-blue-600 shadow-sm'
+              }`;
+
+              button.textContent = hora;
+              button.disabled = estaOcupado;
+
+              if (!estaOcupado) {
+                  button.onclick = () => seleccionarHoraModal(hora);
+              }
+
+              horasModal.appendChild(button);
+          });
+      }
+  }
+
+  // Event listeners
+  document.getElementById('btnAnterior').onclick = irAnterior;
+  document.getElementById('btnSiguiente').onclick = irSiguiente;
+  document.getElementById('btnModificar').onclick = abrirModal;
+  document.getElementById('btnCerrarModal').onclick = cerrarModal;
+  document.getElementById('btnVistaFecha').onclick = () => cambiarVistaModal("fecha");
+  document.getElementById('btnVistaHora').onclick = () => cambiarVistaModal("hora");
+  document.getElementById('btnMesAnterior').onclick = () => navegarMesModal("anterior");
+  document.getElementById('btnMesSiguiente').onclick = () => navegarMesModal("siguiente");
+
+  // Cerrar modal al hacer clic fuera
+  document.getElementById('modal').onclick = (e) => {
+      if (e.target.id === 'modal') {
+          cerrarModal();
+      }
+  };
+
+  // cargar eventos
+  cargarEventos();
+</script>

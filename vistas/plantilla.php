@@ -58,11 +58,7 @@ $obtenerRutas = array_column($rutasEspecialidades, "ruta");
 
     <?php
       if ($pagina) {
-        if (in_array($pagina, $obtenerRutas)) {
-          echo '<script src="vistas/src/js/especialistas.js"></script>';
-        } elseif ($pagina === "agenda") {
-          echo '<script src="vistas/src/js/agenda.js"></script>';
-        } elseif ($pagina === "perfil") {
+        if ($pagina === "perfil") {
           echo '<script src="vistas/src/js/perfil.js"></script>';
         }
       } else {
