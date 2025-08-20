@@ -9,7 +9,7 @@
 
     $especialidad = $especialistas[0]['especialidad'];
     $especialistaSeleccionado = $especialistas[0];
-    ?>
+?>
 
 <main class="min-h-screen bg-slate-50">
   <div class="mx-auto w-full max-w-7xl px-4 py-6">
@@ -42,8 +42,8 @@
             $especialista): ?>
             <button
               class="especialista-btn rounded-xl px-6 py-3 font-medium whitespace-nowrap flex-shrink-0 transition-colors <?php echo $index === 0 ? 'bg-blue-700 text-white' : 'bg-white border border-borde hover:bg-slate-50'; ?>"
-              data-especialista="<?php echo json_encode($especialista); ?>"
-              data-index="<?php echo $index; ?>"
+               data-especialista='<?= htmlspecialchars(json_encode($especialista, JSON_UNESCAPED_UNICODE), ENT_QUOTES, "UTF-8") ?>'
+              data-index="<?= $index; ?>"
             >
               <?php echo $especialista['nombre']; ?>
             </button>
@@ -273,7 +273,7 @@
               <input type="hidden" name="hora" id="form-hora" value="" />
               <input
                 type="hidden"
-                name="total"
+                name="cita_pago"
                 id="form-precio"
                 value="<?php echo number_format((float)'150', 2, '.', ',')  ?>"
               />
@@ -468,6 +468,9 @@
 
           // Actualizar especialista actual
           especialistaActual = JSON.parse(this.dataset.especialista);
+
+          console.log(especialistaActual);
+          
 
           // Actualizar información
           document.getElementById('especialista-foto').src = especialistaActual.foto;

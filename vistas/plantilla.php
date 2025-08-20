@@ -16,15 +16,20 @@ $obtenerRutas = array_column($rutasEspecialidades, "ruta");
     <!-- Title -->
     <title>Odonto365</title>
 
-    <!-- Favicon -->
-
+    
     <!--==================== CSS ====================-->
+    <!-- CSS Perzonalizado -->
+    <link rel="stylesheet" href="vistas/src/css/output.css" />
 
+    <!--==================== SCRIPTS ====================-->
     <!-- lucide -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-    <!-- CSS Perzonalizado -->
-    <link rel="stylesheet" href="vistas/src/css/output.css" />
+    <!-- SweetAlert2 -->
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- SDK Mercado Pago -->
+     <script src="https://sdk.mercadopago.com/js/v2"></script>
   </head>
   <body class="font-body bg-fondo-alternativo min-h-screen">
 
@@ -56,6 +61,7 @@ $obtenerRutas = array_column($rutasEspecialidades, "ruta");
       ?>
     </main>
 
+    <!--==================== JavaScript ====================-->
     <?php
       if ($pagina) {
         if ($pagina === "perfil") {

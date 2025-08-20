@@ -11,7 +11,7 @@ function obtenerDatosCita() {
         'especialidad' => 'Ortodoncia',
         'fecha' => '2025-08-14',
         'hora' => '11:00',
-        'total' => 150
+        'cita_pago' => 150
     ];
 
     //  Validar si existe un id de especialista POST
@@ -22,12 +22,12 @@ function obtenerDatosCita() {
     
     // Si vienen datos por POST, los usamos; si no, usamos los por defecto
     return [
-        'especialista_id' => $POST['especialista_id'] ?? $datosPorDefecto['especialista_id'],
+        'especialista_id' => $_POST['especialista_id'] ?? $datosPorDefecto['especialista_id'],
         'especialista' => $_POST['especialista'] ?? $datosPorDefecto['especialista'],
         'especialidad' => $_POST['especialidad'] ?? $datosPorDefecto['especialidad'],
         'fecha' => $_POST['fecha'] ?? $datosPorDefecto['fecha'],
         'hora' => $_POST['hora'] ?? $datosPorDefecto['hora'],
-        'total' => floatval($_POST['total'] ?? $datosPorDefecto['total'])
+        'cita_pago' => floatval($_POST['cita_pago'] ?? $datosPorDefecto['cita_pago'])
     ];
 }
 
@@ -320,7 +320,7 @@ $datosCita = obtenerDatosCita();
                 Total a pagar:
               </div>
               <div class="text-2xl font-bold text-emerald-600 font-montserrat">
-                $<?php echo number_format($datosCita['total'], 2); ?>
+                $<?php echo number_format($datosCita['cita_pago'], 2); ?>
               </div>
             </div>
             <div class="mt-2 text-slate-400 font-medium">
@@ -328,6 +328,7 @@ $datosCita = obtenerDatosCita();
             </div>
 
             <button
+              id="btnPreAgendar"
               class="mt-5 h-12 w-full rounded-xl bg-blue-700 hover:bg-blue-800 active:bg-blue-900 text-white text-lg gap-2 cursor-pointer transition-all duration-200 font-semibold border-0 flex items-center justify-center"
             >
               <svg
@@ -494,8 +495,12 @@ $datosCita = obtenerDatosCita();
       especialidad: datosCitaIniciales.especialidad,
       fecha: new Date(datosCitaIniciales.fecha),
       hora: datosCitaIniciales.hora,
-      total: datosCitaIniciales.total
+      cita_pago: datosCitaIniciales.cita_pago,
   };
+
+  console.log(datosCita);
+  
+  
 
   async function cargarEventos() {
     // Mostrar la pantalla de carga
@@ -518,9 +523,6 @@ $datosCita = obtenerDatosCita();
 
       const data = await response.json();
       eventosOcupados = data;
-
-      console.log(eventosOcupados);
-      
 
       actualizarInterfaz();
     } catch (error) {
@@ -673,13 +675,33 @@ $datosCita = obtenerDatosCita();
       return horasOcupadasEnDia.has(hora);
   }
 
-  function generarCodigoCita(fecha) {
+  async function generarCodigoCita(fecha) {
+    let codigo, existe;
+
+    do {
       const año = fecha.getFullYear();
       const mes = String(fecha.getMonth() + 1).padStart(2, "0");
       const dia = String(fecha.getDate()).padStart(2, "0");
-      const digitosAleatorios = Math.floor(1000 + Math.random() * 9000);
-      return `CITA-${año}${mes}${dia}-${digitosAleatorios}`;
+      const digitos = Math.floor(1000 + Math.random() * 9000);
+      codigo = `CITA-${año}${mes}${dia}-${digitos}`;
+
+      const resp = await fetch(`${rutaPrincipal}controladores/validarCodigo.controlador.php`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ codigo })
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+
+      existe = Boolean(data?.existe);  // true si ya está en DB, false si no está
+      console.log("validación", { codigo, existe });
+
+    } while (existe);
+
+    return codigo;
   }
+
 
   function actualizarInterfaz() {
       const conflicto = tieneConflicto();
@@ -781,6 +803,7 @@ $datosCita = obtenerDatosCita();
 
           // Actualizar código de cita
           const codigoCita = generarCodigoCita(datosCita.fecha);
+          datosCita.cita_codigo = codigoCita;
           document.getElementById('codigoCita').textContent = codigoCita;
       }
 
@@ -997,6 +1020,39 @@ $datosCita = obtenerDatosCita();
       }
   }
 
+  async function registrarCita() {
+    try {
+      const inicio = fechaHoraCompleta(datosCita.fecha, datosCita.hora);
+
+      const respuesta = await fetch(`${rutaPrincipal}controladores/preagenda.controlador.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_especialidad: datosCita.especialidad_id,     // si lo tienes
+          id_especialista: datosCita.especialista_id,
+          id_usuario: 1,                                   // ← reemplázalo por el ID del usuario logueado
+          cita_pago: "pendiente",
+          cita_status: "pendiente",
+          cita_codigo: "CITA-20250816-1111"/* datosCita.codigoCita */,              // MISMO código de pantalla
+          cita_inicio: inicio,
+          cita_fin: sumarUnaHora(inicio)
+        })
+      });
+
+      const data = await respuesta.json();
+
+      Swal.fire({
+        icon: data.success ? "success" : "error",
+        title: data.message
+      });
+
+      if (data.success) cargarEventos(); // refrescar grilla
+    } catch (e) {
+      console.error(e);
+      Swal.fire("Error", "No se pudo preagendar la cita", "error");
+    }
+  }
+
   // Event listeners
   document.getElementById('btnAnterior').onclick = irAnterior;
   document.getElementById('btnSiguiente').onclick = irSiguiente;
@@ -1006,6 +1062,7 @@ $datosCita = obtenerDatosCita();
   document.getElementById('btnVistaHora').onclick = () => cambiarVistaModal("hora");
   document.getElementById('btnMesAnterior').onclick = () => navegarMesModal("anterior");
   document.getElementById('btnMesSiguiente').onclick = () => navegarMesModal("siguiente");
+   document.getElementById("btnPreAgendar").onclick = () => registrarCita();
 
   // Cerrar modal al hacer clic fuera
   document.getElementById('modal').onclick = (e) => {
